@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(Rigidbody))]
-public class playerPhysicsMovement : MonoBehaviour
+public class playerMovementScript : MonoBehaviour
 {
     [Header("Basic Initialization Stuff")]
     [SerializeField] private float moveSpeed = 8f;
@@ -13,9 +13,9 @@ public class playerPhysicsMovement : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
 
 
-    [SerializeField] private float fallGravityMultiplier = 5f;   
-    [SerializeField] private float lowJumpMultiplier = 3f;      
-    [SerializeField] private float riseGravityMultiplier = 2.2f; 
+    [SerializeField] private float fallGravityMultiplier = 5f;
+    [SerializeField] private float lowJumpMultiplier = 3f;
+    [SerializeField] private float riseGravityMultiplier = 2.2f;
 
     private Rigidbody rb;
     private CapsuleCollider col;
@@ -27,75 +27,95 @@ public class playerPhysicsMovement : MonoBehaviour
     private bool jumpQueued;
     private bool jumpHeld;
 
-    void Awake(){
+    void Awake()
+    {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
         col = GetComponent<CapsuleCollider>();
         playerCamera = Camera.main;
     }
 
-    void Update(){
+    void Update()
+    {
         CheckGround();
-        if (jumpQueued && isGrounded){
+        if (jumpQueued && isGrounded)
+        {
             jumpQueued = false;
             Jump();
         }
     }
 
-    void FixedUpdate(){
+    void FixedUpdate()
+    {
         Move();
         BetterJumpFeel();
     }
 
-    public void OnMove(InputAction.CallbackContext context){
+    public void OnMove(InputAction.CallbackContext context)
+    {
         moveInput = context.ReadValue<Vector2>();
     }
 
-    public void OnJump(InputAction.CallbackContext context){
-        if (context.started){
+    public void OnJump(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
             jumpQueued = true;
             jumpHeld = true;
         }
-        if (context.canceled){
+        if (context.canceled)
+        {
             jumpHeld = false;
         }
     }
 
-    private void Move(){
+    private void Move()
+    {
         Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
         Vector3 desired = move * moveSpeed;
 
         rb.linearVelocity = new Vector3(desired.x, rb.linearVelocity.y, desired.z);
     }
 
-    private void Jump(){
+    private void Jump()
+    {
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
-    private void CheckGround(){
-    RaycastHit hit;
-    Vector3 origin = col.bounds.center;
-    float radius = col.radius * 0.95f;
-    float castDist = (col.bounds.extents.y - radius) + groundCheckDistance;
-    if(Physics.SphereCast(origin, radius, Vector3.down, out hit, castDist, groundLayer)){
-        if(Vector3.Angle(hit.normal, Vector3.up) <= groundAngleThreshHold){
-            isGrounded = true;
-        }else{
+    private void CheckGround()
+    {
+        RaycastHit hit;
+        Vector3 origin = col.bounds.center;
+        float radius = col.radius * 0.95f;
+        float castDist = (col.bounds.extents.y - radius) + groundCheckDistance;
+        if (Physics.SphereCast(origin, radius, Vector3.down, out hit, castDist, groundLayer))
+        {
+            if (Vector3.Angle(hit.normal, Vector3.up) <= groundAngleThreshHold)
+            {
+                isGrounded = true;
+            }
+            else
+            {
+                isGrounded = false;
+            }
+        }
+        else
+        {
             isGrounded = false;
         }
-    }else{
-        isGrounded = false;
-    }
-    
+
     }
 
-    private void BetterJumpFeel(){
+    private void BetterJumpFeel()
+    {
         float yVel = rb.linearVelocity.y;
-        if (yVel < 0f){
+        if (yVel < 0f)
+        {
             rb.AddForce(Physics.gravity * (fallGravityMultiplier - 1f), ForceMode.Acceleration);
         }
-        else if (yVel > 0f){
+        else if (yVel > 0f)
+        {
             float mult = jumpHeld ? riseGravityMultiplier : lowJumpMultiplier;
             rb.AddForce(Physics.gravity * (mult - 1f), ForceMode.Acceleration);
         }
