@@ -14,15 +14,14 @@ public class playerCamera : MonoBehaviour
     private Vector2 lookInput;
 
     [Header("Toggle Viewpoint")]
-    [SerializeField] private Vector3 firstPersonOffset = new Vector3(0f, 0.8f, 0f);
-    [SerializeField] private Vector3 thirdPersonOffset = new Vector3(0.6f, 1.7f, -3f);
+    [SerializeField] private Vector3 firstPersonOffset;
+    [SerializeField] private Vector3 gunOffset;
     [SerializeField] private float cameraTransitionSpeed = 8f;
-
-    private bool isThirdPerson = false;
     private Vector3 currentOffset;
 
 
     [SerializeField] private Transform playerBody;
+    [SerializeField] private Transform gunBody;
 
     void Start()
     {
@@ -46,10 +45,12 @@ public class playerCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        Vector3 targetOffset = isThirdPerson ? thirdPersonOffset : firstPersonOffset;
+        Vector3 targetOffset = firstPersonOffset;
+        Vector3 targetGunOffset = gunOffset;
 
         currentOffset = Vector3.Lerp(currentOffset, targetOffset, cameraTransitionSpeed * Time.deltaTime);
         transform.localPosition = currentOffset;
+        gunBody.transform.localPosition = currentOffset + targetGunOffset;
     }
 
 
