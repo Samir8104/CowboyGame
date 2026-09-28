@@ -131,8 +131,9 @@ GameObject:
   - component: {fileID: 151076767}
   - component: {fileID: 151076766}
   - component: {fileID: 151076765}
-  - component: {fileID: 151076764}
   - component: {fileID: 151076763}
+  - component: {fileID: 151076764}
+  - component: {fileID: 151076769}
   - component: {fileID: 151076762}
   m_Layer: 0
   m_Name: Player
@@ -254,8 +255,24 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 9caa3d8a-6b2f-4e8e-8bad-6ede561bd9be
     m_ActionName: UI/TrackedDeviceOrientation
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 151076769}
+        m_TargetAssemblyTypeName: playerShootingScript, Assembly-CSharp
+        m_MethodName: OnShoot
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: e1029f0d-4ddd-43db-993d-5d533b70cb70
+    m_ActionName: 'Player/Shoot[/Mouse/leftButton]'
   m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
+  m_DefaultControlScheme: Keyboard&Mouse
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
@@ -405,6 +422,20 @@ Transform:
   - {fileID: 620642397}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &151076769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 151076761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e154e44e6bd11c47871e4f90c986243, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  bulletPrefab: {fileID: 8785906241055491157, guid: 33db902de2429f84caa6e7e164e555e8, type: 3}
+  gunObject: {fileID: 1589459484}
 --- !u!1 &620642396
 GameObject:
   m_ObjectHideFlags: 0
@@ -643,7 +674,7 @@ GameObject:
   - component: {fileID: 769816586}
   m_Layer: 0
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -735,7 +766,7 @@ Transform:
   m_GameObject: {fileID: 769816585}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.92, y: 5.43, z: 6.82}
+  m_LocalPosition: {x: 0.92, y: 6.58, z: 6.82}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
