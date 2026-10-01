@@ -19,15 +19,19 @@ public class AIController : MonoBehaviour
     }
     
     private EnemyState state;
-
+    [SerializeField] GameObject bulletPrefab;
     [Header("Nodes")]
     [SerializeField] List<Transform> navNodes = new List<Transform>();
-    private Transform target;
+    private Transform targetNode;
+    [SerializeField] private Transform player;
 
     [Header("Settings")]
     [SerializeField] float moveSpeed = 5.0f;
     [SerializeField] float rotationSpeed = 3.0f;
     [SerializeField] float radiusOfSatisfaction = 1.5f;
+    [SerializeField] float bulletSpeed = 5f;
+    [SerializeField] float bulletCooldown = 1.5f;
+   
 
     private void Start()
     {
@@ -39,28 +43,58 @@ public class AIController : MonoBehaviour
         switch (state)
         {
             case EnemyState.Roaming:
-                if(target == null)
+                if(targetNode == null)
                 {
-                  target = GetRandomNode();
+                  targetNode = GetRandomNode();
                 }
-                Move(target);
-                if (isCloseToTarget())
+                Move(targetNode);
+                if (isCloseToObject(targetNode, radiusOfSatisfaction))
                 {
-                    target = null;
+                    targetNode = null;
+                }
+                if(isCloseToObject(player, 10f))
+                {
+                    state = EnemyState.Attacking;
+                }
+                break;
+            case EnemyState.Attacking:
+                //check LOS before firing
+                if (HasLOS(player))
+                {
+                    Debug.Log("Has LOS, firing at player");
+                    Vector3 direction = (player.position - transform.position).normalized;
+                    transform.rotation = Quaternion.Euler(direction);
+                    
+                    if(bulletCooldown > 0)
+                    {
+                        bulletCooldown -= Time.deltaTime;
+                        return;
+                    }
+                    bulletCooldown = 1.5f;
+                    GameObject newBullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
+                    
+                    newBullet.transform.position += direction * bulletSpeed; 
                 }
                 break;
         }
     }
+
+    private void MoveBullet(GameObject bullet)
+    {
+        bullet.transform.position += bullet.transform.position * bulletSpeed;
+
+    }
+
     private Transform GetRandomNode()
     {
-        int RandomNum = Random.Range(0, navNodes.Count + 1);
+        int RandomNum = Random.Range(0, navNodes.Count);
         return navNodes[RandomNum];
     }
 
-    private bool isCloseToTarget()
+    private bool isCloseToObject(Transform Object, float range)
     {
-        Vector3 DistanceVector = target.position - transform.position;
-        if(DistanceVector.magnitude < radiusOfSatisfaction)
+        Vector3 DistanceVector = Object.position - transform.position;
+        if(DistanceVector.magnitude < range)
         {
             return true; // We are CLOSE to the target and winning
         }
@@ -68,6 +102,19 @@ public class AIController : MonoBehaviour
         {
             return false;
         }
+    }
+
+    private bool HasLOS(Transform player)
+    {
+        RaycastHit hit;
+        Vector3 directionToTarget = (player.position - transform.position);
+
+        if(Physics.Raycast(transform.position, directionToTarget, out hit, 50f))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void Move(Transform target) 
