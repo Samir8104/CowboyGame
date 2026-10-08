@@ -436,10 +436,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   bulletPrefab: {fileID: 8785906241055491157, guid: 33db902de2429f84caa6e7e164e555e8, type: 3}
   gunObject: {fileID: 1589459484}
-  viewDistance: 17
-  viewAngle: 83
-  timeToLock: 1
-  lockLinger: 3
+  viewDistance: 0
+  viewAngle: 0
 --- !u!1 &620642396
 GameObject:
   m_ObjectHideFlags: 0
@@ -790,8 +788,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   myTransform: {fileID: 769816589}
-  moveSpeed: 10
-  distance: 20
+  moveSpeed: 7
+  distance: 15
 --- !u!1 &1156010151
 GameObject:
   m_ObjectHideFlags: 0

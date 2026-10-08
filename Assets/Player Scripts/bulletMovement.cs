@@ -9,31 +9,30 @@ public class bulletMovement : MonoBehaviour
     [SerializeField] private float curveSpeed;
     [SerializeField] private float initialCurveFactor;
 
-    [SerializeField] private float viewDistance;
-    [SerializeField] private float viewAngle;
-
     private Vector3 targetPosition;
     private bool bending;
-    private bool enemyTracked;
+    private GameObject player;
+    private GameObject enemy;
     private Transform playerTransform;
+
+    public bool enemyTracked;
 
     void Start()
     {
-        playerTransform = GameObject.FindWithTag("Player").transform;
-        // Flags
+        player = GameObject.FindWithTag("Player");
+        playerTransform = player.transform;
+        // Flag
         bending = false;
-        enemyTracked = false;
         // Deletes after 3 seconds
         Destroy(gameObject, 3.0f);
         if (GameObject.FindWithTag("Enemy") != null)
         {
             // Sets target position if enemy exists and checks for initial LoS
-            targetPosition = GameObject.FindWithTag("Enemy").transform.position;
-            if (HasLineOfSight())
+            enemy = GameObject.FindWithTag("Enemy");
+            if (enemyTracked)
             {
                 // If LoS passes, start timer to bend
                 StartCoroutine(BeginBending(0.1f));
-                enemyTracked = true;
             }
         }
     }
@@ -44,7 +43,7 @@ public class bulletMovement : MonoBehaviour
         if (enemyTracked)
         {
             // Continue tracking enemy position every frame
-            targetPosition = GameObject.FindWithTag("Enemy").transform.position;
+            targetPosition = enemy.transform.position;
             // If the timer passed, start bending towards enemy
             if (bending == true)
             {
@@ -94,7 +93,6 @@ public class bulletMovement : MonoBehaviour
         if (collision.gameObject.tag == "Enemy")
         {
             // If it's an enemy, do something before deleting
-            Debug.Log("Hit!");
             Destroy(gameObject);
         }
     }
@@ -119,21 +117,12 @@ public class bulletMovement : MonoBehaviour
         myTransform.position = newPosition;
     }
 
-    public bool HasLineOfSight()
+    /* public bulletMovement Create()
     {
-        // Checks distance from player
-        Vector3 directionToTarget = targetPosition - playerTransform.position;
-        float distanceToTarget = directionToTarget.magnitude;
+        public static Object prefab = Resources.Load("Prefabs/Bullet");
+        GameObject newObject = Instantiate(prefab) as GameObject;
+        bulletMovement bullet = newObject.GetComponent<bulletMovement>();
 
-        if (distanceToTarget > viewDistance)
-            return false;
-
-        // Checks angle of player in comparison to angle towards target
-        float angleToTarget = Vector3.Angle(playerTransform.forward, directionToTarget);
-        if (angleToTarget > viewAngle / 2f)
-            return false;
-
-        // If both pass, it's a valid target!
-        return true;
-    }
+        return bullet;
+    } */
 }
