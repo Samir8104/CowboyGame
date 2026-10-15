@@ -7,24 +7,28 @@ public class playerShootingScript : MonoBehaviour
     [SerializeField] public GameObject bulletPrefab;
     [SerializeField] private GameObject gunObject;
 
-    [Header("Lock-on Parameters")]
+    [Header("Gun Parameters")]
     [SerializeField] private float viewDistance;
     [SerializeField] private float viewAngle;
     [SerializeField] private float timeToLock; // in seconds
     [SerializeField] private float lockLinger; // in seconds
+    [SerializeField] private float firingDelay; // in Rounds Per Minute (RPM)
 
     private Transform playerTransform;
     private GameObject enemy;
     private Vector3 targetPosition;
     private bool locked;
+    private bool firingLocked;
     private bool mouseHeld;
     private float timeSpentLocking = 0f;
     private float timeSpentLingering = 0f;
+    private float timeBetweenShots = 0f;
 
     void Start()
     {
-        // Flag
+        // Flags
         locked = false;
+        firingLocked = false;
         // Get the transforms of the player and enemy
         playerTransform = GameObject.FindWithTag("Player").transform;
         if (GameObject.FindWithTag("Enemy") != null)
@@ -38,15 +42,22 @@ public class playerShootingScript : MonoBehaviour
         // Constantly update target position
         targetPosition = enemy.transform.position;
 
+        // Track time between shots for RPM and Locking purposes
+        timeBetweenShots += Time.deltaTime;
+
         // If holding, not locked, and within LoS, start locking
         if (mouseHeld && !locked && HasLineOfSight())
         {
             StartLocking();
         }
         // If you're already locked and lose LoS, let the lock linger
-        if (locked && !HasLineOfSight())
+        if (locked && (!HasLineOfSight() || timeBetweenShots > 1))
         {
             LockLinger();
+        }
+        if (firingLocked)
+        {
+            RPMDelay();
         }
     }
 
@@ -60,7 +71,13 @@ public class playerShootingScript : MonoBehaviour
         {
             mouseHeld = false;
             // Only shoots bullets when the mouse button is released
-            Shoot();
+            // Additionally, yield to RPM limit
+            if (!firingLocked)
+            {
+                Shoot();
+                timeBetweenShots = 0f;
+                firingLocked = true;
+            }
             // Resets lock progress; must be continuous
             timeSpentLocking = 0f;
         }
@@ -97,12 +114,21 @@ public class playerShootingScript : MonoBehaviour
         if (timeSpentLingering > lockLinger)
         {
             locked = false;
-            lockLinger = 0f;
+            timeSpentLingering = 0f;
             Debug.Log("Lock Lost");
         }
         else
         {
             timeSpentLingering += Time.deltaTime;
+        }
+    }
+
+    // Similar to the other two, but with even more different parameters
+    private void RPMDelay()
+    {
+        if (timeBetweenShots > (1 / (firingDelay / 60)))
+        {
+            firingLocked = false;
         }
     }
 

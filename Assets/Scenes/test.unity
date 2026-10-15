@@ -440,6 +440,7 @@ MonoBehaviour:
   viewAngle: 83
   timeToLock: 1
   lockLinger: 3
+  firingDelay: 450
 --- !u!1 &620642396
 GameObject:
   m_ObjectHideFlags: 0
