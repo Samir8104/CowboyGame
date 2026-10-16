@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class AIController : MonoBehaviour
 {
@@ -14,12 +15,18 @@ public class AIController : MonoBehaviour
     {
         Roaming,
         Attacking,
+        MovingToCover,
+        InCover,
         Retreating,
         Died
     }
     
     private EnemyState state;
     [SerializeField] GameObject bulletPrefab;
+    private bool hasCover;
+    Vector3 Cover = Vector3.zero;
+
+    private Vector3 coverVector;
     [Header("Nodes")]
     [SerializeField] List<Transform> navNodes = new List<Transform>();
     private Transform targetNode;
@@ -52,7 +59,7 @@ public class AIController : MonoBehaviour
                 {
                     targetNode = null;
                 }
-                if(isCloseToObject(player, 10f))
+                if(isCloseToObject(player, 15f) || HasLOS(player))
                 {
                     state = EnemyState.Attacking;
                 }
@@ -63,28 +70,89 @@ public class AIController : MonoBehaviour
                 {
                     Debug.Log("Has LOS, firing at player");
                     Vector3 direction = (player.position - transform.position).normalized;
-                    transform.rotation = Quaternion.Euler(direction);
-                    
+                    //transform.rotation = Quaternion.LookRotation(direction);
+
+ 
                     if(bulletCooldown > 0)
                     {
                         bulletCooldown -= Time.deltaTime;
+                        if (!hasCover)
+                        {
+                            int coverDistance = 0; // The AI wants cover, but they need to find cover that is somewhat close to the player but out of LOS of the player
+                            Vector3 closestCover; 
+                            Cover = Vector3.zero;
+                            for (int i = 0; i < 12; i++)
+                            {
+                                Cover = CheckForCover(15f);
+                                if (Cover != Vector3.zero)
+                                {
+                                    hasCover = true;
+                                    state = EnemyState.MovingToCover;
+                                    break;
+                                } // Check for cover 12 times
+                            }
+                        }
+                     
+                     
                         return;
                     }
+
                     bulletCooldown = 1.5f;
                     GameObject newBullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
                     
-                    newBullet.transform.position += direction * bulletSpeed; 
+                    newBullet.transform.position += direction * bulletSpeed;
+                }
+                else if(!isCloseToObject(player, 15f))
+                {
+                    state = EnemyState.Roaming;
                 }
                 break;
+            case EnemyState.MovingToCover:
+                if (Cover != Vector3.zero)
+                {
+                    if (isCloseToObject(Cover, radiusOfSatisfaction))
+                    {
+                        hasCover = false;
+                        state = EnemyState.InCover;
+                    }
+                    else
+                    {
+                        Move(Cover);
+                    }
+                }
+
+                break;
+
+
         }
     }
 
-    private void MoveBullet(GameObject bullet)
+
+
+    private Vector3 CheckForCover(float radius)
     {
-        bullet.transform.position += bullet.transform.position * bulletSpeed;
+        Vector2 AIPosition = new Vector2(transform.position.x, transform.position.z);
+        Vector2 random2dPoint = AIPosition + (Random.insideUnitCircle.normalized * radius); // Take a random 2d point at the AI's position
+        Vector3 Cover = new Vector3(random2dPoint.x, transform.position.y, random2dPoint.y);
+        RaycastHit hit;
+        Vector3 directionToTarget = (player.transform.position - Cover);
+
+        if(Physics.Raycast(Cover, directionToTarget, out hit, 50f))
+        {
+            if (hit.collider.CompareTag("Player"))
+            {
+                return Vector3.zero; // No cover found, keep moving
+            }
+            else
+            {
+                return Cover;
+            }
+        }
+        return Vector3.zero;
+
 
     }
-
+ 
     private Transform GetRandomNode()
     {
         int RandomNum = Random.Range(0, navNodes.Count);
@@ -104,6 +172,19 @@ public class AIController : MonoBehaviour
         }
     }
 
+    private bool isCloseToObject(Vector3 position, float range) // We override our functions like true chads
+    {
+        Vector3 DistanceVector = position - transform.position;
+        if (DistanceVector.magnitude < range)
+        {
+            return true; 
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     private bool HasLOS(Transform player)
     {
         RaycastHit hit;
@@ -111,12 +192,27 @@ public class AIController : MonoBehaviour
 
         if(Physics.Raycast(transform.position, directionToTarget, out hit, 50f))
         {
-            return true;
+            if (hit.collider.CompareTag("Player"))
+            {
+                return true;
+            }
         }
 
         return false;
     }
+    private void Move(Vector3 target)
+    {
+        if (target == null) return;
+        Vector3 direction = (target - transform.position).normalized;
 
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
+
+        transform.position += transform.forward * moveSpeed * Time.deltaTime;
+    }
     private void Move(Transform target) 
     {
         if (target == null) return;
