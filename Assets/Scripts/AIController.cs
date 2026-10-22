@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
 
@@ -25,6 +26,7 @@ public class AIController : MonoBehaviour
     [SerializeField] GameObject bulletPrefab;
     private bool hasCover;
     Vector3 Cover = Vector3.zero;
+    private int currentAmmo;
 
     private Vector3 coverVector;
     [Header("Nodes")]
@@ -36,17 +38,21 @@ public class AIController : MonoBehaviour
     [SerializeField] float moveSpeed = 5.0f;
     [SerializeField] float rotationSpeed = 3.0f;
     [SerializeField] float radiusOfSatisfaction = 1.5f;
+    [SerializeField] float reloadSpeed = 3f;
+    [SerializeField] int ammo = 6;
     [SerializeField] float bulletSpeed = 5f;
     [SerializeField] float bulletCooldown = 1.5f;
    
 
     private void Start()
     {
+        currentAmmo = ammo;
         state = EnemyState.Roaming;
     }
     // Update is called once per frame
     void Update()
     {
+        Debug.Log("Current State:" + state);
         switch (state)
         {
             case EnemyState.Roaming:
@@ -72,7 +78,7 @@ public class AIController : MonoBehaviour
                     Vector3 direction = (player.position - transform.position).normalized;
                     //transform.rotation = Quaternion.LookRotation(direction);
 
- 
+                    
                     if(bulletCooldown > 0)
                     {
                         bulletCooldown -= Time.deltaTime;
@@ -98,9 +104,17 @@ public class AIController : MonoBehaviour
                     }
 
                     bulletCooldown = 1.5f;
-                    GameObject newBullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
-                    
-                    newBullet.transform.position += direction * bulletSpeed;
+                    if(currentAmmo != 0) // AI still has bullets so fire
+                    {
+                        currentAmmo -= 1;
+                        GameObject newBullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
+                        newBullet.transform.position += direction * bulletSpeed;
+                    }
+                    else
+                    {
+                        state = EnemyState.MovingToCover;
+                    }
+                   
                 }
                 else if(!isCloseToObject(player, 15f))
                 {
@@ -122,6 +136,22 @@ public class AIController : MonoBehaviour
                 }
 
                 break;
+            case EnemyState.InCover:
+                float reloadTime = reloadSpeed; // store reload time
+                if(reloadSpeed > 0)
+                {
+                    reloadSpeed -= Time.deltaTime;
+                    Debug.Log("Reload Cooldown:" + reloadSpeed);
+                }
+                else
+                {
+                    Debug.Log("Switching to attack state");
+                    currentAmmo = ammo;
+                    state = EnemyState.Attacking;
+                }
+                reloadSpeed = reloadTime;
+
+                    break;
 
 
         }
