@@ -451,7 +451,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c393291c583b8d64394db8865a1d49ec, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.49
+      value: 0.495
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c393291c583b8d64394db8865a1d49ec, type: 3}
       propertyPath: m_LocalPosition.z
@@ -499,6 +499,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c393291c583b8d64394db8865a1d49ec, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2108005060}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c393291c583b8d64394db8865a1d49ec, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2108005062}
   m_SourcePrefab: {fileID: 100100000, guid: c393291c583b8d64394db8865a1d49ec, type: 3}
 --- !u!4 &826099813 stripped
 Transform:
@@ -1008,6 +1011,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   bulletPrefab: {fileID: 8785906241055491157, guid: c2a4c7b831f30314fab2610bf1304426, type: 3}
+  currentAmmo: 0
   navNodes:
   - {fileID: 485210760}
   - {fileID: 826099813}
@@ -1016,8 +1020,12 @@ MonoBehaviour:
   moveSpeed: 5
   rotationSpeed: 3
   radiusOfSatisfaction: 1.5
+  reloadSpeed: 3
+  ammo: 6
   bulletSpeed: 5
   bulletCooldown: 1.5
+  detectionRange: 25
+  secondsToLoseAggro: 5
 --- !u!136 &2108005060
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1038,9 +1046,36 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.67920387
-  m_Height: 2.5067854
+  m_Height: 2.1048126
   m_Direction: 1
-  m_Center: {x: 0.006107699, y: 0.75339293, z: 2.6760596e-15}
+  m_Center: {x: 0.006107699, y: 0.9543793, z: 3.442668e-15}
+--- !u!54 &2108005062
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108005057}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 80
+  m_CollisionDetection: 0
 --- !u!1001 &1225264977823231284
 PrefabInstance:
   m_ObjectHideFlags: 0

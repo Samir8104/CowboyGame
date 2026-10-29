@@ -21,12 +21,12 @@ public class AIController : MonoBehaviour
         Retreating,
         Died
     }
-    
+    private Rigidbody rb;
     private EnemyState state;
     [SerializeField] GameObject bulletPrefab;
     private bool hasCover;
     Vector3 Cover = Vector3.zero;
-    private int currentAmmo;
+    [SerializeField] int currentAmmo;
 
     private Vector3 coverVector;
     [Header("Nodes")]
@@ -39,20 +39,25 @@ public class AIController : MonoBehaviour
     [SerializeField] float rotationSpeed = 3.0f;
     [SerializeField] float radiusOfSatisfaction = 1.5f;
     [SerializeField] float reloadSpeed = 3f;
+    private float reloadTimer;
     [SerializeField] int ammo = 6;
     [SerializeField] float bulletSpeed = 5f;
     [SerializeField] float bulletCooldown = 1.5f;
+    [SerializeField] float detectionRange;
+    private float timeSincePlrLastSeen = 0f;
+    [SerializeField] float secondsToLoseAggro = 5f;
    
 
     private void Start()
     {
+        reloadTimer = reloadSpeed;
         currentAmmo = ammo;
         state = EnemyState.Roaming;
+        rb = GetComponent<Rigidbody>();
     }
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-        Debug.Log("Current State:" + state);
         switch (state)
         {
             case EnemyState.Roaming:
@@ -65,62 +70,53 @@ public class AIController : MonoBehaviour
                 {
                     targetNode = null;
                 }
-                if(isCloseToObject(player, 15f) || HasLOS(player))
+                if(isCloseToObject(player, detectionRange) && HasLOS(player))
                 {
                     state = EnemyState.Attacking;
                 }
                 break;
             case EnemyState.Attacking:
-                //check LOS before firing
+                if (!isCloseToObject(player, detectionRange))
+                {
+                    Debug.Log("Far away from player, switching to roaming");
+                    state = EnemyState.Roaming;
+                    break;
+                }
                 if (HasLOS(player))
                 {
+                    timeSincePlrLastSeen = 0f;
                     Debug.Log("Has LOS, firing at player");
                     Vector3 direction = (player.position - transform.position).normalized;
                     //transform.rotation = Quaternion.LookRotation(direction);
 
                     
-                    if(bulletCooldown > 0)
+                    if(bulletCooldown >= 0) // Still on cooldown
                     {
+                        
                         bulletCooldown -= Time.deltaTime;
-                        if (!hasCover)
-                        {
-                            int coverDistance = 0; // The AI wants cover, but they need to find cover that is somewhat close to the player but out of LOS of the player
-                            Vector3 closestCover; 
-                            Cover = Vector3.zero;
-                            for (int i = 0; i < 12; i++)
-                            {
-                                Cover = CheckForCover(15f);
-                                if (Cover != Vector3.zero)
-                                {
-                                    hasCover = true;
-                                    state = EnemyState.MovingToCover;
-                                    break;
-                                } // Check for cover 12 times
-                            }
-                        }
-                     
-                     
-                        return;
-                    }
-
-                    bulletCooldown = 1.5f;
-                    if(currentAmmo != 0) // AI still has bullets so fire
-                    {
-                        currentAmmo -= 1;
-                        GameObject newBullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
-                        newBullet.transform.position += direction * bulletSpeed;
+                        break;
                     }
                     else
                     {
-                        state = EnemyState.MovingToCover;
+                        ShootPlayer(direction);
+                        bulletCooldown = 1.5f; // reset cooldown
+
                     }
-                   
                 }
-                else if(!isCloseToObject(player, 15f))
+                else
                 {
-                    state = EnemyState.Roaming;
+                    //No LOS
+                    if(timeSincePlrLastSeen >= secondsToLoseAggro) // The AI hasnt seen the player in a couple seconds, go back to roaming
+                    {
+                        state = EnemyState.Roaming;
+                        timeSincePlrLastSeen = 0f;
+                    }
+                    else
+                    {
+                        timeSincePlrLastSeen += Time.deltaTime;
+                    }
                 }
-                break;
+                    break;
             case EnemyState.MovingToCover:
                 if (Cover != Vector3.zero)
                 {
@@ -134,30 +130,72 @@ public class AIController : MonoBehaviour
                         Move(Cover);
                     }
                 }
-
-                break;
-            case EnemyState.InCover:
-                float reloadTime = reloadSpeed; // store reload time
-                if(reloadSpeed > 0)
+                else
                 {
-                    reloadSpeed -= Time.deltaTime;
-                    Debug.Log("Reload Cooldown:" + reloadSpeed);
+                    Debug.Log("No cover, finding areas around with cover");
+                    for (int i = 0; i > 12; i++) // Check for cover within a radius of the AI. The for loop checks multiple spots within that radius around the AI
+                    {
+                        Cover = CheckForCover(7f);
+                        if(Cover != Vector3.zero) // found cover so break the loop
+                        {
+                            break;
+                        }
+                    }
+                    if(Cover == Vector3.zero)
+                    {
+                        RunAway(10);
+                        // we want to move away but not move TOO far away
+                        if(!isCloseToObject(player, 10))
+                        {
+                            state = EnemyState.InCover;
+                        }
+                    }
+                }
+
+                    break;
+            case EnemyState.InCover:
+                if(reloadTimer > 0)
+                {
+                    reloadTimer -= Time.deltaTime;
+                    break;
                 }
                 else
                 {
                     Debug.Log("Switching to attack state");
                     currentAmmo = ammo;
+                    reloadTimer = reloadSpeed;
                     state = EnemyState.Attacking;
+                    Cover = Vector3.zero;
                 }
-                reloadSpeed = reloadTime;
-
-                    break;
+                break;
 
 
         }
     }
 
+    private void RunAway(int distance)
+    {
+        Vector3 direction = (transform.position - player.position).normalized;
+        Vector3 targetPos = (direction * distance) + transform.position;
+        targetPos.y = transform.position.y; // prevent the AI from moving up/down
+        Move(targetPos);
 
+    
+    }
+
+    private void ShootPlayer(Vector3 direction)
+    {
+        if (currentAmmo != 0) // AI still has bullets so fire
+        {
+            currentAmmo -= 1;
+            GameObject newBullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
+            newBullet.transform.position += direction * bulletSpeed;
+        }
+        else
+        {
+            state = EnemyState.MovingToCover;
+        }
+    }
 
     private Vector3 CheckForCover(float radius)
     {
@@ -238,10 +276,10 @@ public class AIController : MonoBehaviour
         if (direction != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
         }
 
-        transform.position += transform.forward * moveSpeed * Time.deltaTime;
+        rb.MovePosition(rb.position + transform.forward * moveSpeed * Time.fixedDeltaTime);
     }
     private void Move(Transform target) 
     {
@@ -251,9 +289,10 @@ public class AIController : MonoBehaviour
         if(direction != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
+
         }
 
-        transform.position += transform.forward * moveSpeed * Time.deltaTime;
+        rb.MovePosition(rb.position + transform.forward * moveSpeed * Time.fixedDeltaTime);
     }
 }
