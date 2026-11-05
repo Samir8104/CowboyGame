@@ -204,7 +204,7 @@ public class AIController : MonoBehaviour
             state = EnemyState.MovingToCover;
         }
     }
-
+    // THE FIND COVER FUNCTION IS BROKEN ASF RIGHT NOW, IDK WHY
     private Vector3 CheckForCover(float radius)
     {
         Vector2 AIPosition = new Vector2(transform.position.x, transform.position.z);
