@@ -46,7 +46,15 @@ public class AIController : MonoBehaviour
     [SerializeField] float detectionRange;
     private float timeSincePlrLastSeen = 0f;
     [SerializeField] float secondsToLoseAggro = 5f;
-   
+
+    [Header("Avoidance Settings")]
+    [SerializeField] LayerMask obstacleLayer;
+    [SerializeField] float sensorLength = 5f;
+    [SerializeField] float sideSensorLength = 3f;
+    [SerializeField] float sideSensorAngle = 30f;
+    [SerializeField] float avoidanceForce = 10f;
+
+
 
     private void Start()
     {
@@ -272,10 +280,10 @@ public class AIController : MonoBehaviour
     {
         if (target == null) return;
         Vector3 direction = (target - transform.position).normalized;
-
-        if (direction != Vector3.zero)
+        Vector3 newDirection = CalculateAvoidance(direction);
+        if (newDirection != Vector3.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            Quaternion targetRotation = Quaternion.LookRotation(newDirection);
             rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
         }
 
@@ -285,14 +293,71 @@ public class AIController : MonoBehaviour
     {
         if (target == null) return;
         Vector3 direction = (target.position - transform.position).normalized;
-
-        if(direction != Vector3.zero)
+        Vector3 newDirection = CalculateAvoidance(direction);
+        if (newDirection != Vector3.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            Quaternion targetRotation = Quaternion.LookRotation(newDirection);
             rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
 
         }
 
         rb.MovePosition(rb.position + transform.forward * moveSpeed * Time.fixedDeltaTime);
+    }
+
+    Vector3 CalculateAvoidance(Vector3 desiredDirection)
+    {
+        Vector3 steering = Vector3.zero;
+        bool obstacleHit = false;
+        
+        // defining all the three rays
+        Vector3 origin = transform.position + transform.forward * 0.5f; // forward front facing ray
+        Vector3 leftRayDirection = Quaternion.Euler(0, -sideSensorAngle, 0) * transform.forward;
+        Vector3 rightRayDirection = Quaternion.Euler(0, sideSensorAngle, 0) * transform.forward;
+
+        RaycastHit hit;
+
+        // if the forward ray hits something, steer away from that
+        if(Physics.Raycast(origin, transform.forward, out hit, sensorLength, obstacleLayer))
+        {
+            obstacleHit = true;
+            steering += hit.normal * avoidanceForce;
+            Debug.DrawLine(origin, hit.point, Color.red);
+        }
+        else
+        {
+            Debug.DrawRay(origin, transform.forward * sensorLength, Color.green);
+        }
+
+        if (Physics.Raycast(origin, leftRayDirection, out hit, sideSensorLength, obstacleLayer))
+        {
+            obstacleHit = true;
+            steering += transform.right * avoidanceForce * (1 - (hit.distance / sideSensorLength)); // adds a push to the agent in the opposite direction, the 1-(hit.distance / sideSensorLength) is a weight which scales depending on the distance to the wall
+            Debug.DrawLine(origin, hit.point, Color.red);
+        }
+        else
+        {
+            Debug.DrawRay(origin, leftRayDirection * sideSensorLength, Color.green);
+        }
+
+        if(Physics.Raycast(origin, rightRayDirection, out hit, sideSensorLength, obstacleLayer))
+        {
+            obstacleHit = true;
+            steering -= transform.right * avoidanceForce * (1 - (hit.distance / sideSensorLength)); // same logic but negative!
+            Debug.DrawLine(origin, hit.point, Color.red);
+
+        }
+        else
+        {
+            Debug.DrawRay(origin, rightRayDirection * sideSensorLength, Color.green);
+        }
+
+        if (obstacleHit)
+        {
+            return (desiredDirection + steering).normalized;
+        }
+
+        return desiredDirection;
+
+
     }
 }
