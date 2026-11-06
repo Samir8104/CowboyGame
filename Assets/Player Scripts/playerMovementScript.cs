@@ -9,7 +9,7 @@ public class playerMovementScript : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float jumpForce = 5f;
     [SerializeField] private float groundCheckDistance = 0.15f;
-    [SerializeField] private float groundAngleThreshHold = 50f;
+    [SerializeField] private float groundAngleThreshHold = 45f;
     [SerializeField] private LayerMask groundLayer;
 
 
@@ -21,9 +21,10 @@ public class playerMovementScript : MonoBehaviour
     private CapsuleCollider col;
     private Vector2 moveInput;
     private Camera playerCamera;
-
+    private RaycastHit hit;
 
     private bool isGrounded;
+    private bool isSloped;
     private bool jumpQueued;
     private bool jumpHeld;
 
@@ -65,6 +66,7 @@ public class playerMovementScript : MonoBehaviour
         }
         if (context.canceled)
         {
+            jumpQueued = false;
             jumpHeld = false;
         }
     }
@@ -74,7 +76,26 @@ public class playerMovementScript : MonoBehaviour
         Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
         Vector3 desired = move * moveSpeed;
 
-        rb.linearVelocity = new Vector3(desired.x, rb.linearVelocity.y, desired.z);
+        if (isSloped)
+        {
+            if (isGrounded)
+            {
+                desired = Vector3.ProjectOnPlane(desired, hit.normal).normalized * moveSpeed;
+                rb.useGravity = false;
+                rb.linearVelocity = desired;
+            }
+            else
+            {
+                rb.linearVelocity = new Vector3(desired.x, Mathf.Min(rb.linearVelocity.y, -9f), desired.z);
+                rb.useGravity = true;
+            }  
+        }
+        else
+        {
+            rb.linearVelocity = new Vector3(desired.x, rb.linearVelocity.y, desired.z);
+            rb.useGravity = true;
+        }
+            
     }
 
     private void Jump()
@@ -85,13 +106,13 @@ public class playerMovementScript : MonoBehaviour
 
     private void CheckGround()
     {
-        RaycastHit hit;
         Vector3 origin = col.bounds.center;
-        float radius = col.radius * 0.95f;
+        float radius = col.radius * 1.05f;
         float castDist = (col.bounds.extents.y - radius) + groundCheckDistance;
         if (Physics.SphereCast(origin, radius, Vector3.down, out hit, castDist, groundLayer))
         {
-            if (Vector3.Angle(hit.normal, Vector3.up) <= groundAngleThreshHold)
+            float angle = Vector3.Angle(hit.normal, Vector3.up);
+            if (angle <= groundAngleThreshHold)
             {
                 isGrounded = true;
             }
@@ -99,10 +120,19 @@ public class playerMovementScript : MonoBehaviour
             {
                 isGrounded = false;
             }
+            if (angle != 0f)
+            {
+                isSloped = true;
+            }
+            else
+            {
+                isSloped = false;
+            }
         }
         else
         {
             isGrounded = false;
+            isSloped = false;
         }
 
     }
@@ -120,4 +150,5 @@ public class playerMovementScript : MonoBehaviour
             rb.AddForce(Physics.gravity * (mult - 1f), ForceMode.Acceleration);
         }
     }
+
 }
