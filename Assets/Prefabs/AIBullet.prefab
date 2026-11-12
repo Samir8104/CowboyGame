@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 542471222666037159}
   - component: {fileID: 6193302354616039033}
   - component: {fileID: 5991815914808254797}
-  - component: {fileID: -8628277641771423980}
   - component: {fileID: -2597094315087374079}
   - component: {fileID: -8027520133655938107}
   - component: {fileID: 1189865534723538268}
@@ -70,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 63a95ebb98c4a274396153a8a0cc8e70, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -94,24 +93,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &-8628277641771423980
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8785906241055491157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de0a4ab1b477ce343b2d50b5a6cd5bde, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  myTransform: {fileID: 542471222666037159}
-  bulletSpeed: 40
-  curveSpeed: 0.1
-  initialCurveFactor: 0.35
-  viewDistance: 27
-  viewAngle: 75
 --- !u!135 &-2597094315087374079
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -172,3 +153,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d3f2f3355138b74d95bcec37bf30738, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  bulletSpeed: 100

@@ -95,7 +95,7 @@ public class AIController : MonoBehaviour
                     timeSincePlrLastSeen = 0f;
                     Debug.Log("Has LOS, firing at player");
                     Vector3 direction = (player.position - transform.position).normalized;
-                    //transform.rotation = Quaternion.LookRotation(direction);
+                    transform.rotation = Quaternion.LookRotation(direction);
 
                     
                     if(bulletCooldown >= 0) // Still on cooldown
@@ -130,34 +130,40 @@ public class AIController : MonoBehaviour
                 {
                     if (isCloseToObject(Cover, radiusOfSatisfaction))
                     {
+                        Debug.Log("Close to cover, no longer moving");
                         hasCover = false;
                         state = EnemyState.InCover;
                     }
                     else
                     {
+                        Debug.Log("Moving to cover");
                         Move(Cover);
                     }
                 }
                 else
                 {
+                    float angle = 0;
                     Debug.Log("No cover, finding areas around with cover");
-                    for (int i = 0; i > 12; i++) // Check for cover within a radius of the AI. The for loop checks multiple spots within that radius around the AI
+                    for (int i = 0; i < 12; i++) // Check for cover within a radius of the AI. The for loop checks multiple spots within that radius around the AI
                     {
-                        Cover = CheckForCover(7f);
+
+                        Debug.Log("Im the for loop that fr runs ong");
+                        Cover = CheckForCover(14f, 30f);
                         if(Cover != Vector3.zero) // found cover so break the loop
                         {
                             break;
                         }
+                        angle += 30; // Add 30 degrees to the angle
                     }
-                    if(Cover == Vector3.zero)
-                    {
-                        RunAway(10);
-                        // we want to move away but not move TOO far away
-                        if(!isCloseToObject(player, 10))
-                        {
-                            state = EnemyState.InCover;
-                        }
-                    }
+                    //if(Cover == Vector3.zero)
+                    //{
+                    //    RunAway(10);
+                    //    // we want to move away but not move TOO far away
+                    //    if(!isCloseToObject(player, 10))
+                    //    {
+                    //        state = EnemyState.InCover;
+                    //    }
+                    //}
                 }
 
                     break;
@@ -205,11 +211,12 @@ public class AIController : MonoBehaviour
         }
     }
     // THE FIND COVER FUNCTION IS BROKEN ASF RIGHT NOW, IDK WHY
-    private Vector3 CheckForCover(float radius)
+    private Vector3 CheckForCover(float radius, float angle)
     {
-        Vector2 AIPosition = new Vector2(transform.position.x, transform.position.z);
-        Vector2 random2dPoint = AIPosition + (Random.insideUnitCircle.normalized * radius); // Take a random 2d point at the AI's position
-        Vector3 Cover = new Vector3(random2dPoint.x, transform.position.y, random2dPoint.y);
+
+
+        Vector3 Cover = GetPointOnCircumference(angle, radius);
+        Debug.Log("Current cover:" + Cover);
         RaycastHit hit;
         Vector3 directionToTarget = (player.transform.position - Cover);
 
@@ -227,6 +234,15 @@ public class AIController : MonoBehaviour
         return Vector3.zero;
 
 
+    }
+
+    Vector3 GetPointOnCircumference(float angle, float radius)
+    {
+        float radians = angle * Mathf.Deg2Rad;
+        float x = transform.position.x + Mathf.Cos(radians) * radius;
+        float z = transform.position.z + Mathf.Sin(radians) * radius;
+
+        return new Vector3(x, transform.position.y + 0.4f , z); 
     }
  
     private Transform GetRandomNode()
