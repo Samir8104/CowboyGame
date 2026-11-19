@@ -336,13 +336,13 @@ MonoBehaviour:
   moveSpeed: 16
   jumpForce: 75
   groundCheckDistance: 0.15
-  groundAngleThreshHold: 45
+  groundAngleThreshhold: 45
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
   fallGravityMultiplier: 5
   lowJumpMultiplier: 3
-  riseGravityMultiplier: 2.2
+  riseGravityMultiplier: 1.8
 --- !u!136 &151076765
 CapsuleCollider:
   m_ObjectHideFlags: 0

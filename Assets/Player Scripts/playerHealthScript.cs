@@ -27,10 +27,6 @@ public class playerHealthScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (actualHP <= 0)
-        {
-            Destroy(gameObject);
-        }
         if (inCombat)
         {
             CombatTimer();
@@ -84,6 +80,10 @@ public class playerHealthScript : MonoBehaviour
         {
             Destroy(collision.gameObject);
             actualHP -= bulletDamage;
+            if (actualHP <= 0)
+            {
+                Destroy(gameObject);
+            }
             healthText.text = "HP: " + actualHP;
             inCombat = true;
             timeSinceLastHit = 0f;

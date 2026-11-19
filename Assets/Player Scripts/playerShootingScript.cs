@@ -41,16 +41,16 @@ public class playerShootingScript : MonoBehaviour
         ammoText.text = "Ammo: " + ammoHeld;
         // Get the transforms of the player and enemy
         playerTransform = GameObject.FindWithTag("Player").transform;
-        if (GameObject.FindWithTag("Enemy") != null)
-        {
-            enemy = GameObject.FindWithTag("Enemy");
-        }
+        enemy = GameObject.FindWithTag("Enemy");
     }
 
     void Update()
     {
         // Constantly update target position
-        targetPosition = enemy.transform.position;
+        if (enemy != null)
+        {
+            targetPosition = enemy.transform.position;
+        }
 
         // Track time between shots for RPM and Locking purposes
         timeBetweenShots += Time.deltaTime;

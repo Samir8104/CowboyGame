@@ -9,7 +9,7 @@ public class playerMovementScript : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float jumpForce = 5f;
     [SerializeField] private float groundCheckDistance = 0.15f;
-    [SerializeField] private float groundAngleThreshHold = 45f;
+    [SerializeField] private float groundAngleThreshhold = 45f;
     [SerializeField] private LayerMask groundLayer;
 
 
@@ -112,7 +112,7 @@ public class playerMovementScript : MonoBehaviour
         if (Physics.SphereCast(origin, radius, Vector3.down, out hit, castDist, groundLayer))
         {
             float angle = Vector3.Angle(hit.normal, Vector3.up);
-            if (angle <= groundAngleThreshHold)
+            if (angle <= groundAngleThreshhold)
             {
                 isGrounded = true;
             }
