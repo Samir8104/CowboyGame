@@ -1109,6 +1109,8 @@ MonoBehaviour:
   bulletCooldown: 1.5
   detectionRange: 25
   secondsToLoseAggro: 5
+  strafeMinTime: 0.25
+  strafeMaxTime: 1
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 1

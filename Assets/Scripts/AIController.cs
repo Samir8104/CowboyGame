@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
@@ -27,7 +28,7 @@ public class AIController : MonoBehaviour
     private bool hasCover;
     Vector3 Cover = Vector3.zero;
     [SerializeField] int currentAmmo;
-
+    private bool isStrafing = false;
     private Vector3 coverVector;
     [Header("Nodes")]
     [SerializeField] List<Transform> navNodes = new List<Transform>();
@@ -46,6 +47,8 @@ public class AIController : MonoBehaviour
     [SerializeField] float detectionRange;
     private float timeSincePlrLastSeen = 0f;
     [SerializeField] float secondsToLoseAggro = 5f;
+    [SerializeField] float strafeMinTime = 1f;
+    [SerializeField] float strafeMaxTime = 3f;
 
     [Header("Avoidance Settings")]
     [SerializeField] LayerMask obstacleLayer;
@@ -106,7 +109,23 @@ public class AIController : MonoBehaviour
                     }
                     else
                     {
+                        if (!isStrafing)
+                        {
+                            isStrafing = true;
+                            int randomDirection = Random.Range(0, 2); // choose a direction to strafe in, 0 is right, left is 1. Also it has to be 2 because unity is NOT INCLUSIVE # not cool
+                            float strafeDuration = Random.Range(strafeMinTime, strafeMaxTime);
+                            if(randomDirection == 0)
+                            {
+                                StartCoroutine(Strafe(transform.right, strafeDuration));
+                            }
+                            else
+                            {
+                                StartCoroutine(Strafe(-transform.right, strafeDuration));
+
+                            }
+                        }
                         ShootPlayer(direction);
+
                         bulletCooldown = 1.5f; // reset cooldown
 
                     }
@@ -148,22 +167,22 @@ public class AIController : MonoBehaviour
                     {
 
                         Debug.Log("Im the for loop that fr runs ong");
-                        Cover = CheckForCover(14f, 30f);
+                        Cover = CheckForCover(14f, angle);
                         if(Cover != Vector3.zero) // found cover so break the loop
                         {
                             break;
                         }
                         angle += 30; // Add 30 degrees to the angle
                     }
-                    //if(Cover == Vector3.zero)
-                    //{
-                    //    RunAway(10);
-                    //    // we want to move away but not move TOO far away
-                    //    if(!isCloseToObject(player, 10))
-                    //    {
-                    //        state = EnemyState.InCover;
-                    //    }
-                    //}
+                    if (Cover == Vector3.zero)
+                    {
+                        RunAway(10);
+                        // we want to move away but not move TOO far away
+                        if (!isCloseToObject(player, 10))
+                        {
+                            state = EnemyState.InCover;
+                        }
+                    }
                 }
 
                     break;
@@ -185,6 +204,18 @@ public class AIController : MonoBehaviour
 
 
         }
+    }
+    private IEnumerator Strafe(Vector3 direction, float duration)
+    {
+        float elasped = 0f;
+        while(elasped < duration)
+        {
+            elasped += Time.deltaTime;
+            rb.MovePosition(rb.position + direction * Time.fixedDeltaTime);
+            yield return null;
+        }
+        // finished moving, reset ze BOOL!
+        isStrafing = false;
     }
 
     private void RunAway(int distance)
