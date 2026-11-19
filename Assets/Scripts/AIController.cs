@@ -13,7 +13,7 @@ public class AIController : MonoBehaviour
     // In roaming, the cowboy will roam around some pre determined nodes (or it could be random, we'll see)
     // In the attack state, the ai will try and get line of sight with the player to attack them
     // If the cowboy gets hurt, it will try and retreat
-    private enum EnemyState
+    public enum EnemyState
     {
         Roaming,
         Attacking,
@@ -23,9 +23,8 @@ public class AIController : MonoBehaviour
         Died
     }
     private Rigidbody rb;
-    private EnemyState state;
+    public EnemyState state;
     [SerializeField] GameObject bulletPrefab;
-    private bool hasCover;
     Vector3 Cover = Vector3.zero;
     [SerializeField] int currentAmmo;
     private bool isStrafing = false;
@@ -43,12 +42,13 @@ public class AIController : MonoBehaviour
     private float reloadTimer;
     [SerializeField] int ammo = 6;
     [SerializeField] float bulletSpeed = 5f;
-    [SerializeField] float bulletCooldown = 1.5f;
+    [SerializeField] float bulletCooldown = 0f;
     [SerializeField] float detectionRange;
     private float timeSincePlrLastSeen = 0f;
     [SerializeField] float secondsToLoseAggro = 5f;
     [SerializeField] float strafeMinTime = 1f;
     [SerializeField] float strafeMaxTime = 3f;
+    [SerializeField] float strafeSpeed = 0.2f;
 
     [Header("Avoidance Settings")]
     [SerializeField] LayerMask obstacleLayer;
@@ -57,7 +57,9 @@ public class AIController : MonoBehaviour
     [SerializeField] float sideSensorAngle = 30f;
     [SerializeField] float avoidanceForce = 10f;
 
-
+    private Coroutine activeCoroutine;
+    private int strafingDirection; // 0 is right, 1 is left
+    private bool strafingWithoutLOS = false;
 
     private void Start()
     {
@@ -95,13 +97,30 @@ public class AIController : MonoBehaviour
                 }
                 if (HasLOS(player))
                 {
+                   
                     timeSincePlrLastSeen = 0f;
-                    Debug.Log("Has LOS, firing at player");
                     Vector3 direction = (player.position - transform.position).normalized;
                     transform.rotation = Quaternion.LookRotation(direction);
+                    if (!isStrafing)
+                    {
+                        isStrafing = true;
+                        strafingWithoutLOS = false;
+                        strafingDirection = Random.Range(0, 2); // choose a direction to strafe in, 0 is right, left is 1. Also it has to be 2 because unity is NOT INCLUSIVE # not cool
+                        float strafeDuration = Random.Range(strafeMinTime, strafeMaxTime);
+                        if (strafingDirection == 0)
+                        {
+                            strafeDuration = 1;
+                          activeCoroutine = StartCoroutine(Strafe(transform.right, strafeDuration));
+                        }
+                        else
+                        {
+                            strafeDuration = 0.1f;
+                          activeCoroutine = StartCoroutine(Strafe(-transform.right, strafeDuration));
 
-                    
-                    if(bulletCooldown >= 0) // Still on cooldown
+                        }
+                    }
+
+                    if (bulletCooldown >= 0) // Still on cooldown
                     {
                         
                         bulletCooldown -= Time.deltaTime;
@@ -109,21 +128,7 @@ public class AIController : MonoBehaviour
                     }
                     else
                     {
-                        if (!isStrafing)
-                        {
-                            isStrafing = true;
-                            int randomDirection = Random.Range(0, 2); // choose a direction to strafe in, 0 is right, left is 1. Also it has to be 2 because unity is NOT INCLUSIVE # not cool
-                            float strafeDuration = Random.Range(strafeMinTime, strafeMaxTime);
-                            if(randomDirection == 0)
-                            {
-                                StartCoroutine(Strafe(transform.right, strafeDuration));
-                            }
-                            else
-                            {
-                                StartCoroutine(Strafe(-transform.right, strafeDuration));
-
-                            }
-                        }
+                     
                         ShootPlayer(direction);
 
                         bulletCooldown = 1.5f; // reset cooldown
@@ -132,6 +137,25 @@ public class AIController : MonoBehaviour
                 }
                 else
                 {
+                    if (isStrafing && !strafingWithoutLOS)
+                    {
+                        Debug.Log("Jiggle peeking");
+                        StopCoroutine(activeCoroutine);
+                        strafingWithoutLOS = true;
+                        if(strafingDirection == 0)
+                        {
+                            float strafeDuration = Random.Range(strafeMinTime, strafeMaxTime);
+                            activeCoroutine = StartCoroutine(Strafe(-transform.right, strafeDuration));
+                            strafingDirection = 1;
+                        }
+                        else
+                        {
+                            float strafeDuration = Random.Range(strafeMinTime, strafeMaxTime);
+                            activeCoroutine = StartCoroutine(Strafe(transform.right, strafeDuration));
+                            strafingDirection = 0;
+                        }
+                        return;
+                    }
                     //No LOS
                     if(timeSincePlrLastSeen >= secondsToLoseAggro) // The AI hasnt seen the player in a couple seconds, go back to roaming
                     {
@@ -150,7 +174,7 @@ public class AIController : MonoBehaviour
                     if (isCloseToObject(Cover, radiusOfSatisfaction))
                     {
                         Debug.Log("Close to cover, no longer moving");
-                        hasCover = false;
+
                         state = EnemyState.InCover;
                     }
                     else
@@ -211,7 +235,7 @@ public class AIController : MonoBehaviour
         while(elasped < duration)
         {
             elasped += Time.deltaTime;
-            rb.MovePosition(rb.position + direction * Time.fixedDeltaTime);
+            rb.MovePosition(rb.position + direction * strafeSpeed * Time.fixedDeltaTime);
             yield return null;
         }
         // finished moving, reset ze BOOL!
@@ -241,7 +265,6 @@ public class AIController : MonoBehaviour
             state = EnemyState.MovingToCover;
         }
     }
-    // THE FIND COVER FUNCTION IS BROKEN ASF RIGHT NOW, IDK WHY
     private Vector3 CheckForCover(float radius, float angle)
     {
 
@@ -257,9 +280,12 @@ public class AIController : MonoBehaviour
             {
                 return Vector3.zero; // No cover found, keep moving
             }
-            else
+            else 
             {
-                return Cover;
+               if(isPlrCLoseToObject(Cover, 50f))
+                {
+                    return Cover;
+                }
             }
         }
         return Vector3.zero;
@@ -295,6 +321,19 @@ public class AIController : MonoBehaviour
         }
     }
 
+    private bool isPlrCLoseToObject(Vector3 position, float range)
+    {
+        Vector3 DistanceVector = position - player.position;
+        if (DistanceVector.magnitude < range)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     private bool isCloseToObject(Vector3 position, float range) // We override our functions like true chads
     {
         Vector3 DistanceVector = position - transform.position;
@@ -311,15 +350,17 @@ public class AIController : MonoBehaviour
     private bool HasLOS(Transform player)
     {
         RaycastHit hit;
-        Vector3 directionToTarget = (player.position - transform.position);
-
-        if(Physics.Raycast(transform.position, directionToTarget, out hit, 50f))
+        if(isCloseToObject(player.position, 50f))
         {
-            if (hit.collider.CompareTag("Player"))
+            if (Physics.Linecast(transform.position, player.position, out hit))
             {
-                return true;
+                if (hit.collider.CompareTag("Player"))
+                {
+                    return true;
+                }
             }
         }
+     
 
         return false;
     }
